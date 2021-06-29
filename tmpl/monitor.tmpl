@@ -34,7 +34,7 @@ resource "datadog_monitor" "_{{ .Id }}" {
   evaluation_delay = {{ .EvaluationDelay }}
   {{- end }}
   {{- if .Thresholds }} {{- with .Thresholds }}
-  thresholds = {
+  monitor_thresholds {
     {{- if .Ok }}
     ok = {{ .Ok }}
     {{- end }}
