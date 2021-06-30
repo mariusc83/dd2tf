@@ -4,6 +4,7 @@ package main
 
 import (
 	"github.com/zorkian/go-datadog-api"
+	"errors"
 )
 
 type ScreenBoard struct {
@@ -36,4 +37,12 @@ func (s ScreenBoard) getAllElements(client datadog.Client) ([]Item, error) {
 		ids = append(ids, Item{id: *elem.Id, d: ScreenBoard{}})
 	}
 	return ids, nil
+}
+
+func (s ScreenBoard) getAllElementsByTags(client datadog.Client, tags []string) ([]Item, error) {
+	return nil, errors.New("Method not supported")
+}
+
+func (s ScreenBoard) getAllElementsByName(client datadog.Client, name string) ([]Item, error) {
+	return nil, errors.New("Method not supported")
 }

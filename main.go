@@ -30,6 +30,8 @@ type DatadogElement interface {
 	getAsset() string
 	getName() string
 	getAllElements(client datadog.Client) ([]Item, error)
+	getAllElementsByName(client datadog.Client, name string) ([]Item, error)
+	getAllElementsByTags(client datadog.Client, tags []string) ([]Item, error)
 }
 
 type Item struct {
@@ -80,6 +82,8 @@ func escapeCharacters(line string) string {
 
 type SecondaryOptions struct {
 	ids   []int
+	tags []string
+	name string
 	files bool
 	all   bool
 	debug bool
@@ -88,6 +92,8 @@ type SecondaryOptions struct {
 func NewSecondaryOptions(cmd *flag.FlagSet) *SecondaryOptions {
 	options := &SecondaryOptions{}
 	cmd.IntSliceVar(&options.ids, "ids", []int{}, "IDs of the elements to fetch.")
+	cmd.StringSliceVar(&options.tags, "tags", []string{}, "Tags of the elements to fetch.")
+	cmd.StringVar(&options.name, "name", "", "Name of the elements to fetch.")
 	cmd.BoolVar(&options.all, "all", false, "Export all available elements.")
 	cmd.BoolVar(&options.files, "files", false, "Save each element into a separate file.")
 	cmd.BoolVar(&options.debug, "debug", false, "Enable debug output.")
@@ -96,21 +102,30 @@ func NewSecondaryOptions(cmd *flag.FlagSet) *SecondaryOptions {
 
 func executeLogic(opts *SecondaryOptions, config *LocalConfig, component DatadogElement) {
 	config.files = opts.files //TODO: get rid of this ugly hack
-	if (len(opts.ids) == 0) && (opts.all == false) {
-		log.Fatal("Either --ids or --all should be specified")
+	if (len(opts.ids) == 0) && (len(opts.tags)==0) && (opts.all == false) && (opts.name == "") {
+		log.Fatal("Either --ids, --all, --tags or --name should be specified")
+	} else if opts.name != "" {
+		allElements, err := component.getAllElementsByName(config.client, opts.name)
+		updateConfig(&allElements, &err, config)
+	} else if (len(opts.tags)) > 0 {
+		allElements, err := component.getAllElementsByTags(config.client, opts.tags)
+		updateConfig(&allElements, &err, config)
 	} else if opts.all == true {
 		allElements, err := component.getAllElements(config.client)
-		if err != nil {
-			log.Fatal(err)
-		}
-		config.items = allElements
-		log.Debugf("Exporting all elements: %v", allElements)
+		updateConfig(&allElements, &err, config)
 	} else {
-		log.Debug("Exporting selected elements")
 		for _, item := range opts.ids {
 			config.items = append(config.items, Item{id: item, d: component})
 		}
 	}
+}
+
+func updateConfig(items *[]Item, err *error, config *LocalConfig) {
+    if *err != nil {
+	    log.Fatal(*err)
+	}
+	config.items = *items
+	log.Debugf("Exporting all elements: %v", *items)
 }
 
 func usage() {
@@ -124,8 +139,7 @@ func main() {
 	log.SetOutput(os.Stdout)
 	log.SetLevel(log.WarnLevel)
 	log.RegisterExitHandler(usage)
-
-	if len(os.Args) < 2 {
+    if len(os.Args) < 2 {
 		log.Fatal("Not enough arguments to proceed")
 	} else {
 		//TODO: current approach means that we do selective parsing:

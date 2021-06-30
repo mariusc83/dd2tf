@@ -37,3 +37,27 @@ func (m Monitor) getAllElements(client datadog.Client) ([]Item, error) {
 	}
 	return ids, nil
 }
+
+func (m Monitor) getAllElementsByTags(client datadog.Client, tags []string) ([]Item, error) {
+	var ids []Item
+	monitors, err := client.GetMonitorsByTags(tags)
+	if err != nil {
+		return nil, err
+	}
+	for _, elem := range monitors {
+		ids = append(ids, Item{id: *elem.Id, d: Monitor{}})
+	}
+	return ids, nil
+}
+
+func (m Monitor) getAllElementsByName(client datadog.Client, name string) ([]Item, error) {
+	var ids []Item
+	monitors, err := client.GetMonitorsByName(name)
+	if err != nil {
+		return nil, err
+	}
+	for _, elem := range monitors {
+		ids = append(ids, Item{id: *elem.Id, d: Monitor{}})
+	}
+	return ids, nil
+}
