@@ -9,8 +9,7 @@ Useful, if you had all dashboards configured adhoc and now want to follow DevOps
 # How to build
 Just run (GOPATH and sometimes GOBIN have to be set):
 ```bash
-dep ensure
-go generate && go build
+go build
 ```
 
 # Examples
